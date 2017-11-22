@@ -66,7 +66,7 @@ The TCP states are generalized as above because they tend to be a useful abstrac
 
 Not exactly. Prometheus's [node_exporter](https://github.com/prometheus/node_exporter/) has the disabled-by-default `tcpstat` module, which exposes the number of connections in each TCP state. It does not expose which remote hosts are being connected to and which states those connections are in.
 
-`tcp_stat` parses `/proc/net/tcp` to obtain its metrics. On busy servers, parsing a large number of connection entries would have made that module perform poorly. In addition, there would be significant overhead for Prometheus to scrape and store the large amount of constantly-changing label:value pairs of metrics that such a busy server would expose. So it was decided (link?) to expose only totals for each TCP state, which is quite a reasonable choice for the typical user.
+Why not? One difficulty is that `tcpstat` parses `/proc/net/tcp` to obtain its metrics, which can become slow on a busy server. In addition, there would be significant overhead for the Prometheus server to scrape and store the large amount of constantly-changing label:value pairs of metrics that such a busy server would expose. As stated in the [docs](https://github.com/prometheus/node_exporter/commit/e2163db0f7a8f16ba9f505d9ca72bc2c68696e7d#diff-04c6e90faac2675aa89e2176d2eec7d8R54) accompanying tcpstat, "the current version has potential performance issues in high load situations". So the Prometheus authors decided to expose only totals for each TCP state, which is quite a reasonable choice for the typical user.
 
 conntrack_exporter exists to put that choice in the hands of the user. It is written in C++ (`node_exporter` is written in Golang) and instead of parsing `/proc/net/tcp`, it uses [libnetfilter_conntrack](https://www.netfilter.org/projects/libnetfilter_conntrack/) for direct access to the Linux kernel's connection table. This should make it reasonably fast even on busy servers, and allows more visibility into what's behind the summarized totals exposed by `tcpstat`.
 
@@ -89,4 +89,8 @@ sysctl -p
 
 **WARNING:** Raising this setting too high is not recommended, especially on high-traffic servers, because it'll overflow your system's connection table due to all the extra closed connections it has to keep track of.
 
-Similar issues with other connection states (besides `closed`) might be resolved by updating the other `net.netfilter.nf_conntrack_tcp_timeout_*` settings. Run `sysctl -a | grep conntrack | grep timeout` to see all available settings.
+Similar issues with other connection states (besides `closed`) might be resolved by updating the other `net.netfilter.nf_conntrack_tcp_timeout_*` settings as appropriate. Run `sysctl -a | grep conntrack | grep timeout` to see all available settings.
+
+### It's great, but I wish it...
+
+Please open a [new issue](https://github.com/hiveco/conntrack_exporter/issues/new).
