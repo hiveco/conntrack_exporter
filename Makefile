@@ -10,7 +10,6 @@ run:
 
 build_docker: build
 	docker build -t hiveco/conntrack_exporter:$(CONNTRACK_EXPORTER_VERSION) .
-	rm -f conntrack_exporter
 
 run_docker: build_docker
 	docker run -it --rm \

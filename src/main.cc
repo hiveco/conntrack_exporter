@@ -10,17 +10,21 @@
 
 #include "connection_table.h"
 
+using namespace std;
+using namespace prometheus;
+using namespace conntrackex;
+
 
 // Allow Ctrl+C to break the main loop:
 static volatile int keep_running = 1;
-void sigint_handler(int) { keep_running = 0; }
+void sigint_handler(int)
+{
+    cout << "Stopping conntrack_exporter" << endl;
+    keep_running = 0;
+}
 
 int main(int argc, char** argv)
 {
-    using namespace std;
-    using namespace prometheus;
-    using namespace conntrackex;
-
     signal(SIGINT, sigint_handler);
 
     const string listen_port = "9100";

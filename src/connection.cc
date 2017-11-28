@@ -17,8 +17,10 @@ Connection::Connection(nf_conntrack* ct)
 {
     this->id = nfct_get_attr_u32(ct, ATTR_ID);
     this->state = getStateFromTCPState(nfct_get_attr_u8(ct, ATTR_TCP_STATE));
-    this->remote_ip = nfct_get_attr_u32(ct, ATTR_ORIG_IPV4_DST);
-    this->remote_port = ntohs(nfct_get_attr_u16(ct, ATTR_REPL_PORT_SRC));
+    //this->remote_ip = nfct_get_attr_u32(ct, ATTR_ORIG_IPV4_DST);
+    //this->remote_port = ntohs(nfct_get_attr_u16(ct, ATTR_REPL_PORT_SRC));
+    this->remote_ip = nfct_get_attr_u32(ct, ATTR_ORIG_IPV4_SRC);
+    this->remote_port = ntohs(nfct_get_attr_u16(ct, ATTR_ORIG_PORT_DST));
 }
 
 string Connection::toString() const

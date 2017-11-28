@@ -1,9 +1,12 @@
-# conntrack_exporter
+# **conntrack_exporter**
+
+*Prometheus exporter for network connections*
 
 ## Uses
 
-* **Operations**: monitor when a critical link between your microservices is broken or behaving strangely.
+* **Operations**: monitor when a critical link between your microservices is broken.
 * **Security**: monitor which remote hosts your server is talking to.
+* **Debugging**: correlate intermittently misbehaving code with strange connection patterns.
 
 
 ## Features
@@ -36,10 +39,22 @@ conntrack_closed_connections_total{host="sub.domain2.com"} 0
 ## Quick Start
 
 ```
-docker run -d --cap-add=NET_ADMIN --net=host --name=conntrack_exporter -p 9100:9100 hiveco/conntrack_exporter:0.1
+docker run -d --cap-add=NET_ADMIN --net=host --name=conntrack_exporter hiveco/conntrack_exporter:0.1
 ```
 
 Then open http://localhost:9100/metrics in your browser.
+
+
+## Building
+
+Prerequisites:
+
+* [Bazel](https://www.bazel.build/) (tested with v0.7.0)
+* libnetfilter-conntrack-dev (Ubuntu/Debian: `apt-get install libnetfilter-conntrack-dev`)
+
+conntrack_exporter builds as a mostly-static binary, only requiring that the `libnetfilter_conntrack` library is available on the system. To build the binary, run `make`. To build the `hiveco/conntrack_exporter` Docker image, run `make build_docker`.
+
+NOTE: Building has only been tested on Ubuntu 16.04.
 
 
 ## Connection States
@@ -70,6 +85,10 @@ Why not? One difficulty is that `tcpstat` parses `/proc/net/tcp` to obtain its m
 
 conntrack_exporter exists to put that choice in the hands of the user. It is written in C++ (`node_exporter` is written in Golang) and instead of parsing `/proc/net/tcp`, it uses [libnetfilter_conntrack](https://www.netfilter.org/projects/libnetfilter_conntrack/) for direct access to the Linux kernel's connection table. This should make it reasonably fast even on busy servers, and allows more visibility into what's behind the summarized totals exposed by `tcpstat`.
 
+### Should I run this on a server that listens for external Internet connections?
+
+Probably not, since a large number of unique connecting clients will create many metric labels and your Prometheus instance may be overwhelmed. conntrack_exporter is best used with internal servers (like application servers behind a load balancer, databases, caches, queues, etc), since the total number of remote endpoints these connect to tends to be small and fixed (i.e. usually just the other internal services behind your firewall).
+
 ### I know some open connections were closed, why is `conntrack_closed_connections_total` not reporting them?
 
 conntrack_exporter just exposes the system's connection table in a format Prometheus can scrape, and it's likely the closed connections are being dropped from the system table very quickly. It could be that this guage goes up for some short period and then goes back down again before your Prometheus server can scrape it.
@@ -81,9 +100,14 @@ Check the current setting:
 sysctl net.netfilter.nf_conntrack_tcp_timeout_close
 ```
 
-Update it:
+Update it temporarily (lasts until next reboot):
 ```
-echo "net.netfilter.nf_conntrack_tcp_timeout_close = 60" >> /etc/sysctl.conf
+sysctl -w net.netfilter.nf_conntrack_tcp_timeout_close=60
+```
+
+Update it permanently:
+```
+echo "net.netfilter.nf_conntrack_tcp_timeout_close=60" >> /etc/sysctl.conf
 sysctl -p
 ```
 
