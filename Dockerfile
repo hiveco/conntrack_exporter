@@ -7,4 +7,4 @@ RUN set -ex; \
 
 ADD conntrack_exporter /bin/
 
-CMD ["conntrack_exporter"]
+ENTRYPOINT ["conntrack_exporter"]

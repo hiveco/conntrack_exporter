@@ -16,7 +16,6 @@ run_docker: build_docker
 		--cap-add=NET_ADMIN \
 		--name=conntrack_exporter \
 		--net=host \
-		-p 9100:9100 \
 		hiveco/conntrack_exporter:$(CONNTRACK_EXPORTER_VERSION)
 
 publish_docker: build_docker

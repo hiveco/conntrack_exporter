@@ -1,10 +1,10 @@
 cc_binary(
     name = "conntrack_exporter",
     srcs = glob(["src/*.cc", "src/*h"]),
-    #includes = ["src"],
     deps = [
         "@prometheus_cpp//:prometheus_cpp",
         "@libnetfilter_conntrack//:libnetfilter_conntrack",
+        "@argagg//:argagg",
     ],
     linkstatic=1,
     linkopts = [

@@ -5,12 +5,7 @@ git_repository(
 )
 
 load("@prometheus_cpp//:repositories.bzl", "prometheus_cpp_repositories")
-
 prometheus_cpp_repositories()
 
-# This requires libnetfilter-conntrack-dev to be installed on Ubuntu/Debian
-new_local_repository(
-    name = "libnetfilter_conntrack",
-    build_file = "BUILD.libnetfilter_conntrack",
-    path = "/usr/include",
-)
+load("//:repositories.bzl", "conntrack_exporter_dependencies")
+conntrack_exporter_dependencies()

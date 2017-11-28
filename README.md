@@ -42,7 +42,15 @@ conntrack_closed_connections_total{host="sub.domain2.com"} 0
 docker run -d --cap-add=NET_ADMIN --net=host --name=conntrack_exporter hiveco/conntrack_exporter:0.1
 ```
 
-Then open http://localhost:9100/metrics in your browser.
+Then open http://localhost:9318/metrics in your browser.
+
+To change the listen port:
+
+```
+docker run -d --cap-add=NET_ADMIN --net=host --name=conntrack_exporter hiveco/conntrack_exporter:0.1 --listen-port=9101
+```
+
+Run with `--help` to see all available options.
 
 
 ## Building
