@@ -1,14 +1,18 @@
 CONNTRACK_EXPORTER_VERSION = 0.1
 
 build:
-	bazel build //:conntrack_exporter
+	bazel build -c dbg //:conntrack_exporter
+	cp -f bazel-bin/conntrack_exporter .
+
+build_stripped:
+	bazel build --strip=always //:conntrack_exporter
 	cp -f bazel-bin/conntrack_exporter .
 
 # May need to run make via sudo for this:
 run:
 	./conntrack_exporter
 
-build_docker: build
+build_docker: build_stripped
 	docker build -t hiveco/conntrack_exporter:$(CONNTRACK_EXPORTER_VERSION) .
 
 run_docker: build_docker

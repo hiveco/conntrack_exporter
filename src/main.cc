@@ -99,8 +99,7 @@ int main(int argc, char** argv)
 
         // Add guages for the individual connections:
         table.rebuild();
-        auto connections = table.getConnections();
-        for (auto connection : connections)
+        for (auto& connection : table.getConnections())
         {
             Gauge* pGuage;
             switch (connection.getState())
@@ -122,7 +121,6 @@ int main(int argc, char** argv)
             }
             pGuage->Increment();
         }
-
         exposer.RegisterCollectable(registry);
 
         this_thread::sleep_for(chrono::seconds(1));

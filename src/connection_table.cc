@@ -1,27 +1,35 @@
 #include "connection_table.h"
 
+#include <cassert>
+#include <thread>
+
 
 namespace conntrackex {
 
 using namespace std;
 
+ConnectionTable::ConnectionTable()
+{
+    this->handle = nfct_open(CONNTRACK, 0);
+    assert(this->handle);
+}
+
+ConnectionTable::~ConnectionTable()
+{
+    nfct_close(this->handle);
+}
+
 void ConnectionTable::rebuild()
 {
     this->connections.clear();
 
-    auto handle = nfct_open(CONNTRACK, 0);
-    if (!handle)
-        return;
-
-    nfct_callback_register(handle, NFCT_T_ALL, ConnectionTable::nfct_callback, this);
+    nfct_callback_register(this->handle, NFCT_T_ALL, ConnectionTable::nfct_rebuild_callback, this);
 
     uint32_t family = AF_INET;
-    nfct_query(handle, NFCT_Q_DUMP, &family);
-
-    nfct_close(handle);
+    nfct_query(this->handle, NFCT_Q_DUMP, &family);
 }
 
-int ConnectionTable::nfct_callback(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data)
+int ConnectionTable::nfct_rebuild_callback(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data)
 {
     auto table = static_cast<ConnectionTable*>(data);
 
