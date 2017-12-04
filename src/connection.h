@@ -30,7 +30,8 @@ public:
 
     string getRemoteIP() const;
     uint16_t getRemotePort() const;
-    string getRemoteHost() const { return this->getRemoteIP() + ":" + std::to_string(this->getRemotePort()); }
+    string getRemoteHost() const { return this->getRemoteIP() + ":" + to_string(this->getRemotePort()); }
+    bool hasTrackingStopped() const;
     ConnectionState getState() const;
     string getStateString() const { return stateToString(this->getState()); }
     string toString() const;

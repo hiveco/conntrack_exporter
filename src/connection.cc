@@ -1,5 +1,7 @@
 #include "connection.h"
 
+#include <cassert>
+
 
 namespace conntrackex {
 
@@ -7,6 +9,7 @@ using namespace std;
 
 bool Connection::isConnTrackSupported(nf_conntrack* ct)
 {
+    // We only want TCP connections:
     if (nfct_get_attr_u8(ct, ATTR_L4PROTO) != IPPROTO_TCP)
         return false;
 
@@ -36,9 +39,26 @@ uint16_t Connection::getRemotePort() const
     return ntohs(nfct_get_attr_u16(this->conntrack, ATTR_ORIG_PORT_DST));
 }
 
+bool Connection::hasTrackingStopped() const
+{
+    // ATTR_TCP_STATE == TCP_CONNTRACK_NONE is not a real TCP state, and is
+    // used by libnetfilter_conntrack as a flag to indicate that this conntrack
+    // is being dropped from the kernel's tables.
+
+    return (nfct_get_attr_u8(this->conntrack, ATTR_TCP_STATE) == TCP_CONNTRACK_NONE);
+}
+
 ConnectionState Connection::getState() const
 {
-    switch (nfct_get_attr_u8(this->conntrack, ATTR_TCP_STATE))
+    auto tcp_state = nfct_get_attr_u8(this->conntrack, ATTR_TCP_STATE);
+
+    // Calling this method on an untracked connection is a bug. We also don't
+    // expect to see MAX or IGNORE.
+    assert(!this->hasTrackingStopped() &&
+           tcp_state != TCP_CONNTRACK_MAX &&
+           tcp_state != TCP_CONNTRACK_IGNORE);
+
+    switch (tcp_state)
     {
         case TCP_CONNTRACK_SYN_SENT:
         case TCP_CONNTRACK_SYN_SENT2:
@@ -52,12 +72,10 @@ ConnectionState Connection::getState() const
         case TCP_CONNTRACK_TIME_WAIT:
             return ConnectionState::CLOSING;
         case TCP_CONNTRACK_CLOSE:
-        case TCP_CONNTRACK_NONE:
-        case TCP_CONNTRACK_MAX:
-        case TCP_CONNTRACK_IGNORE:
-            break;
+            return ConnectionState::CLOSED;
     }
 
+    assert(false);
     return ConnectionState::CLOSED;
 }
 
@@ -99,8 +117,10 @@ string Connection::stateToString(ConnectionState state)
         case ConnectionState::OPEN: return "Open";
         case ConnectionState::CLOSING: return "Closing";
         case ConnectionState::CLOSED: return "Closed";
-        default: return "";
     }
+
+    assert(false);
+    return "";
 }
 
 } // namespace conntrackex
