@@ -76,7 +76,7 @@ int main(int argc, char** argv)
         if (args["log_events"])
             table.enableLogging();
 
-        cout << "conntrack_exporter v0.1" << endl;
+        cout << "conntrack_exporter v0.2" << endl;
         cout << "Serving metrics at http://" + guessed_local_endpoint + ":" << listen_port << "/metrics ..." << endl;
 
         table.attach();

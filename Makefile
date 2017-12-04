@@ -1,4 +1,4 @@
-CONNTRACK_EXPORTER_VERSION = 0.1
+CONNTRACK_EXPORTER_VERSION = 0.2
 
 build:
 	bazel build -c dbg //:conntrack_exporter
