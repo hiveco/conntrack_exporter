@@ -64,6 +64,11 @@ void ConnectionTable::updateConnection(Connection& connection)
     pair<ConnectionSet::iterator, bool> result = this->connections.insert(connection);
     if (!result.second)
     {
+        auto& old_connection = *result.first;
+
+        if (!connection.hasTrackingStopped())
+            connection.mergeStateHistory(old_connection);
+
         ConnectionSet::iterator hint = result.first;
         hint++;
         this->connections.erase(result.first);
@@ -71,6 +76,20 @@ void ConnectionTable::updateConnection(Connection& connection)
         if (!connection.hasTrackingStopped())
             this->connections.insert(hint, connection);
     }
+
+    // DEBUG
+    if (this->log_events)
+    {
+        int tcp_state = nfct_get_attr_u8(connection.conntrack, ATTR_TCP_STATE);
+        string event = result.second ? "NEW" : "UPDATE";
+        cout << event << " ["
+            << "id=" << to_string(nfct_get_attr_u32(connection.conntrack, ATTR_ID))
+            << ", tcp_state=" << to_string(tcp_state)
+            << ", num_states=" << to_string(connection.getStateHistory().size())
+            << ", table_size=" << this->connections.size()
+            << "]" << endl;
+    }
+    // DEBUG
 }
 
 int ConnectionTable::nfct_callback(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data)

@@ -76,7 +76,7 @@ int main(int argc, char** argv)
         if (args["log_events"])
             table.enableLogging();
 
-        cout << "conntrack_exporter v0.2" << endl;
+        cout << "conntrack_exporter v0.3" << endl;
         cout << "Serving metrics at http://" + guessed_local_endpoint + ":" << listen_port << "/metrics ..." << endl;
 
         table.attach();
@@ -84,46 +84,49 @@ int main(int argc, char** argv)
 
             // Build up a registry and metric families:
             auto registry = make_shared<Registry>();
-            auto& opening_connections_family = BuildGauge()
-                .Name("conntrack_opening_connections")
+            auto& opening_connections_family = BuildCounter()
+                .Name("conntrack_opening_connections_total")
                 .Help("How many connections to the remote host are currently opening?")
                 .Register(*registry);
-            auto& open_connections_family = BuildGauge()
-                .Name("conntrack_open_connections")
+            auto& open_connections_family = BuildCounter()
+                .Name("conntrack_open_connections_total")
                 .Help("How many open connections are there to the remote host?")
                 .Register(*registry);
-            auto& closing_connections_family = BuildGauge()
-                .Name("conntrack_closing_connections")
+            auto& closing_connections_family = BuildCounter()
+                .Name("conntrack_closing_connections_total")
                 .Help("How many connections to the remote host are currently closing?")
                 .Register(*registry);
-            auto& closed_connections_family = BuildGauge()
-                .Name("conntrack_closed_connections")
+            auto& closed_connections_family = BuildCounter()
+                .Name("conntrack_closed_connections_total")
                 .Help("How many connections to the remote host have recently closed?")
                 .Register(*registry);
 
-            // Add guages for the individual connections:
+            // Add counters for the individual connections:
             table.update();
             for (auto& connection : table.getConnections())
             {
-                Gauge* pGuage;
-                switch (connection.getState())
+                for (auto state : connection.getStateHistory())
                 {
-                    case ConnectionState::OPENING:
-                        pGuage = &opening_connections_family.Add({{"host", connection.getRemoteHost()}});
-                        break;
-                    case ConnectionState::OPEN:
-                        pGuage = &open_connections_family.Add({{"host", connection.getRemoteHost()}});
-                        break;
-                    case ConnectionState::CLOSING:
-                        pGuage = &closing_connections_family.Add({{"host", connection.getRemoteHost()}});
-                        break;
-                    case ConnectionState::CLOSED:
-                        pGuage = &closed_connections_family.Add({{"host", connection.getRemoteHost()}});
-                        break;
-                    default:
-                        continue;
+                    Counter* pCounter;
+                    switch (state)
+                    {
+                        case ConnectionState::OPENING:
+                            pCounter = &opening_connections_family.Add({{"host", connection.getRemoteHost()}});
+                            break;
+                        case ConnectionState::OPEN:
+                            pCounter = &open_connections_family.Add({{"host", connection.getRemoteHost()}});
+                            break;
+                        case ConnectionState::CLOSING:
+                            pCounter = &closing_connections_family.Add({{"host", connection.getRemoteHost()}});
+                            break;
+                        case ConnectionState::CLOSED:
+                            pCounter = &closed_connections_family.Add({{"host", connection.getRemoteHost()}});
+                            break;
+                        default:
+                            continue;
+                    }
+                    pCounter->Increment();
                 }
-                pGuage->Increment();
             }
             exposer.RegisterCollectable(registry);
 

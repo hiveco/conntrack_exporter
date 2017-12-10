@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <list>
 #include <arpa/inet.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack.h>
 #include <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h>
@@ -39,12 +40,21 @@ public:
     bool operator<(const Connection& other) const;
     bool operator==(const Connection& other) const;
 
-private:
+    const list<ConnectionState>& getStateHistory() const { return this->state_history; }
+
+protected:
+
+    friend class ConnectionTable;
+
+    void mergeStateHistory(const Connection& previous);
+
+protected:
 
     static string ip32ToString(uint32_t ip32);
     static string stateToString(ConnectionState state);
 
     nf_conntrack* conntrack;
+    list<ConnectionState> state_history;
 };
 
 } // namespace conntrackex

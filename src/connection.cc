@@ -19,6 +19,9 @@ bool Connection::isConnTrackSupported(nf_conntrack* ct)
 Connection::Connection(nf_conntrack* ct)
 {
     this->conntrack = nfct_clone(ct);
+
+    if (!this->hasTrackingStopped())
+        this->state_history.push_front(this->getState());
 }
 
 Connection::~Connection()
@@ -98,6 +101,26 @@ bool Connection::operator<(const Connection& other) const
 bool Connection::operator==(const Connection& other) const
 {
     return (nfct_compare(this->conntrack, other.conntrack) == 1);
+}
+
+void Connection::mergeStateHistory(const Connection& previous)
+{
+    // If the previous connection has the same state as this connection, then
+    // there's nothing to do. This occurs when there is a change in TCP state
+    // that we still consider the same state. Since state changes are always
+    // in the order OPENING > OPEN > CLOSING > CLOSED, we just need to check
+    // if the current states are the same.
+    if (previous.getState() == this->getState())
+        return;
+
+    // We'll be clearing the history, so make sure it's empty or only contains
+    // the current state:
+    assert(this->state_history.size() < 2);
+    this->state_history.clear();
+
+    // Merge the previous historical states and the current state:
+    this->state_history = previous.state_history;
+    this->state_history.push_front(this->getState());
 }
 
 string Connection::ip32ToString(uint32_t ip32)
