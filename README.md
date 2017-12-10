@@ -11,28 +11,28 @@
 
 ## Features
 
-conntrack_exporter exposes Prometheus metrics showing the state and remote endpoint for each connections on the server. For example:
+conntrack_exporter exposes Prometheus metrics showing the state and remote endpoint for each connection on the server. For example:
 
 ```
-# HELP conntrack_opening_connections_total How many connections to the remote host are currently opening?
-# TYPE conntrack_opening_connections_total gauge
-conntrack_opening_connections_total{host="sub.domain1.com"} 2
-conntrack_opening_connections_total{host="sub.domain2.com"} 0
+# HELP conntrack_opening_connections How many connections to the remote host are currently opening?
+# TYPE conntrack_opening_connections gauge
+conntrack_opening_connections{host="10.0.1.5:3306"} 2
+conntrack_opening_connections{host="10.0.1.12:8080"} 0
 
-# HELP conntrack_open_connections_total How many open connections are there to the remote host?
-# TYPE conntrack_open_connections_total gauge
-conntrack_open_connections_total{host="sub.domain1.com"} 49
-conntrack_open_connections_total{host="sub.domain2.com"} 19
+# HELP conntrack_open_connections How many open connections are there to the remote host?
+# TYPE conntrack_open_connections gauge
+conntrack_open_connections{host="10.0.1.5:3306"} 49
+conntrack_open_connections{host="10.0.1.12:8080"} 19
 
-# HELP conntrack_closing_connections_total How many connections to the remote host are currently closing?
-# TYPE conntrack_closing_connections_total gauge
-conntrack_closing_connections_total{host="sub.domain1.com"} 0
-conntrack_closing_connections_total{host="sub.domain2.com"} 1
+# HELP conntrack_closing_connections How many connections to the remote host are currently closing?
+# TYPE conntrack_closing_connections gauge
+conntrack_closing_connections{host="10.0.1.5:3306"} 0
+conntrack_closing_connections{host="10.0.1.12:8080"} 1
 
-# HELP conntrack_closed_connections_total How many connections to the remote host have recently closed?
-# TYPE conntrack_closed_connections_total gauge
-conntrack_closed_connections_total{host="sub.domain1.com"} 3
-conntrack_closed_connections_total{host="sub.domain2.com"} 0
+# HELP conntrack_closed_connections How many connections to the remote host have recently closed?
+# TYPE conntrack_closed_connections gauge
+conntrack_closed_connections{host="10.0.1.5:3306"} 3
+conntrack_closed_connections{host="10.0.1.12:8080"} 0
 ```
 
 
@@ -97,7 +97,7 @@ conntrack_exporter exists to put that choice in the hands of the user. It is wri
 
 Probably not, since a large number of unique connecting clients will create many metric labels and your Prometheus instance may be overwhelmed. conntrack_exporter is best used with internal servers (like application servers behind a load balancer, databases, caches, queues, etc), since the total number of remote endpoints these connect to tends to be small and fixed (i.e. usually just the other internal services behind your firewall).
 
-### I know some open connections were closed, why is `conntrack_closed_connections_total` not reporting them?
+### I know some open connections were closed, why is `conntrack_closed_connections` not reporting them?
 
 conntrack_exporter just exposes the system's connection table in a format Prometheus can scrape, and it's likely the closed connections are being dropped from the system table very quickly. It could be that this guage goes up for some short period and then goes back down again before your Prometheus server can scrape it.
 

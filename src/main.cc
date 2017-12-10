@@ -85,19 +85,19 @@ int main(int argc, char** argv)
             // Build up a registry and metric families:
             auto registry = make_shared<Registry>();
             auto& opening_connections_family = BuildGauge()
-                .Name("conntrack_opening_connections_total")
+                .Name("conntrack_opening_connections")
                 .Help("How many connections to the remote host are currently opening?")
                 .Register(*registry);
             auto& open_connections_family = BuildGauge()
-                .Name("conntrack_open_connections_total")
+                .Name("conntrack_open_connections")
                 .Help("How many open connections are there to the remote host?")
                 .Register(*registry);
             auto& closing_connections_family = BuildGauge()
-                .Name("conntrack_closing_connections_total")
+                .Name("conntrack_closing_connections")
                 .Help("How many connections to the remote host are currently closing?")
                 .Register(*registry);
             auto& closed_connections_family = BuildGauge()
-                .Name("conntrack_closed_connections_total")
+                .Name("conntrack_closed_connections")
                 .Help("How many connections to the remote host have recently closed?")
                 .Register(*registry);
 
