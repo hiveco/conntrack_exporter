@@ -1,11 +1,11 @@
-CONNTRACK_EXPORTER_VERSION = 0.2
+CONNTRACK_EXPORTER_VERSION = 0.3
 
 build:
 	bazel build -c dbg //:conntrack_exporter
 	cp -f bazel-bin/conntrack_exporter .
 
 build_stripped:
-	bazel build --strip=always //:conntrack_exporter
+	bazel build --strip=always -c opt //:conntrack_exporter
 	cp -f bazel-bin/conntrack_exporter .
 
 # May need to run make via sudo for this:

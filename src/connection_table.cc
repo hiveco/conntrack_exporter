@@ -29,7 +29,7 @@ void ConnectionTable::attach()
     int flags = fcntl(fd, F_GETFL, 0);
     flags |= O_NONBLOCK;
     if (fcntl(fd, F_SETFL, flags) != 0)
-        assert(false);
+        throw runtime_error("Error setting the NetFilter socket to non-blocking mode.");
 
     this->rebuild();
 
@@ -59,18 +59,37 @@ void ConnectionTable::updateConnection(Connection& connection)
 {
     // When rebuilding, we should never get a connection that is untracked (i.e.
     // no longer being tracked by the kernel):
-    assert(!(this->is_rebuilding && connection.hasTrackingStopped()));
+    if (this->is_rebuilding && !connection.isTracked())
+        throw logic_error("Found a NOTRACK connection when rebuilding the connection table.");
+
+    // TODO: The above exception might occur if an event from attach() happens
+    // during a rebuild(). Refactor nfct_callback() into two separate callbacks
+    // each of which calls a different version of this updateConnection()
+    // method to avoid the issue.
 
     pair<ConnectionSet::iterator, bool> result = this->connections.insert(connection);
-    if (!result.second)
-    {
-        ConnectionSet::iterator hint = result.first;
-        hint++;
-        this->connections.erase(result.first);
 
-        if (!connection.hasTrackingStopped())
-            this->connections.insert(hint, connection);
-    }
+    // If the connection was not already in the table, there's nothing else to
+    // do. However, if the connection is not tracked then we actually want to
+    // undo the insertion above (netfilter_conntrack is likely telling us about
+    // a NOTRACK connection, which is safe to ignore), so we don't return just
+    // yet.
+    if (result.second && connection.isTracked())
+        return;
+
+    // Erase the existing entry for this connection in the table:
+    ConnectionSet::iterator hint = result.first;
+    hint++;
+    this->connections.erase(result.first);
+
+    // If we are being notified that the current connection is no longer being
+    // tracked by the kernel, there's no need to re-add it to the table so
+    // we're done:
+    if (!connection.isTracked())
+        return;
+
+    // Re-insert the up-to-date connection:
+    this->connections.insert(hint, connection);
 }
 
 int ConnectionTable::nfct_callback(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data)
@@ -83,7 +102,7 @@ int ConnectionTable::nfct_callback(enum nf_conntrack_msg_type type, struct nf_co
     if (table->log_events)
     {
         char buf[1024];
-        nfct_snprintf(buf, sizeof(buf), ct, NFCT_T_UNKNOWN, NFCT_O_DEFAULT, NFCT_OF_TIME | NFCT_OF_TIMESTAMP | NFCT_OF_SHOW_LAYER3);
+        nfct_snprintf(buf, sizeof(buf), ct, NFCT_T_ALL, NFCT_O_DEFAULT, NFCT_OF_TIME | NFCT_OF_TIMESTAMP | NFCT_OF_SHOW_LAYER3);
         printf("%s\n", buf);
     }
 
