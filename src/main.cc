@@ -32,6 +32,7 @@ int main(int argc, char** argv)
         { "bind_address", {"-b", "--bind-address"}, "The IP address on which to bind the metrics HTTP endpoint (default: 0.0.0.0)", 1 },
         { "listen_port", {"-l", "--listen-port"}, "The port on which to expose the metrics HTTP endpoint (default: 9318)", 1 },
         { "log_events", {"-e", "--log-events"}, "Enables logging of connection events", 0 },
+        { "debug", {"-d", "--debug"}, "Enables logging of debug messages", 0 },
         { "help", {"-h", "--help"}, "Print help and exit", 0 },
 
     }};
@@ -75,6 +76,8 @@ int main(int argc, char** argv)
         ConnectionTable table;
         if (args["log_events"])
             table.enableLogging();
+        if (args["debug"])
+            table.enableDebugging();
 
         cout << "conntrack_exporter v0.3" << endl;
         cout << "Serving metrics at http://" + guessed_local_endpoint + ":" << listen_port << "/metrics ..." << endl;

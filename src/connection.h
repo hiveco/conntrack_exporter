@@ -31,10 +31,11 @@ public:
     string getRemoteIP() const;
     uint16_t getRemotePort() const;
     string getRemoteHost() const { return this->getRemoteIP() + ":" + to_string(this->getRemotePort()); }
-    bool isTracked() const;
+    bool hasState() const;
     ConnectionState getState() const;
     string getStateString() const { return stateToString(this->getState()); }
     string toString() const;
+    string toNetFilterString() const;
 
     bool operator<(const Connection& other) const;
     bool operator==(const Connection& other) const;

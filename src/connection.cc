@@ -39,17 +39,8 @@ uint16_t Connection::getRemotePort() const
     return ntohs(nfct_get_attr_u16(this->conntrack, ATTR_ORIG_PORT_DST));
 }
 
-bool Connection::isTracked() const
+bool Connection::hasState() const
 {
-    /*
-        ATTR_TCP_STATE == TCP_CONNTRACK_NONE is not a real TCP state, and is
-        used by libnetfilter_conntrack as a flag to indicate two situations:
-        1. That this conntrack is being dropped from the kernel's tables
-           (although it was being tracked before).
-        2. A rarer case where for some reason tracking is disabled for this
-           particular connection (e.g. using iptables NOTRACK).
-    */
-
     return (nfct_get_attr_u8(this->conntrack, ATTR_TCP_STATE) != TCP_CONNTRACK_NONE);
 }
 
@@ -64,9 +55,9 @@ ConnectionState Connection::getState() const
     assert(tcp_state != TCP_CONNTRACK_MAX);
     assert(tcp_state != TCP_CONNTRACK_IGNORE);
 
-    // Calling this method on an untracked connection is a bug:
-    if (!this->isTracked())
-        throw logic_error("Can't get connection state from an untracked connection.");
+    // Calling this method on a connection with no state is a bug:
+    if (!this->hasState())
+        throw logic_error("Connection state not available.");
 
     switch (tcp_state)
     {
@@ -95,9 +86,16 @@ string Connection::toString() const
     output
         << "{"
         << "\"remote_host\":\"" << this->getRemoteIP().c_str() << ":" << this->getRemotePort() << "\","
-        << "\"state\":\"" << (this->isTracked() ? this->getStateString().c_str() : "<Untracked>") << "\""
+        << "\"state\":\"" << (this->hasState() ? this->getStateString().c_str() : "None") << "\""
         << "}";
     return output.str();
+}
+
+string Connection::toNetFilterString() const
+{
+    char buffer[1024];
+    nfct_snprintf(buffer, sizeof(buffer), this->conntrack, NFCT_T_ALL, NFCT_O_DEFAULT, NFCT_OF_TIME | NFCT_OF_TIMESTAMP | NFCT_OF_SHOW_LAYER3);
+    return string(buffer);
 }
 
 bool Connection::operator<(const Connection& other) const

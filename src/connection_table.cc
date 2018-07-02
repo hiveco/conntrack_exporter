@@ -33,7 +33,7 @@ void ConnectionTable::attach()
 
     this->rebuild();
 
-    nfct_callback_register(this->handle, NFCT_T_ALL, ConnectionTable::nfct_callback, this);
+    nfct_callback_register(this->handle, NFCT_T_ALL, ConnectionTable::nfct_callback_attach, this);
 }
 
 void ConnectionTable::update()
@@ -45,7 +45,7 @@ void ConnectionTable::rebuild()
 {
     this->connections.clear();
 
-    nfct_callback_register(this->handle, NFCT_T_ALL, ConnectionTable::nfct_callback, this);
+    nfct_callback_register(this->handle, NFCT_T_ALL, ConnectionTable::nfct_callback_rebuild, this);
 
     this->is_rebuilding = true;
 
@@ -55,61 +55,75 @@ void ConnectionTable::rebuild()
     this->is_rebuilding = false;
 }
 
-void ConnectionTable::updateConnection(Connection& connection)
+int ConnectionTable::nfct_callback_attach(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data)
 {
-    // When rebuilding, we should never get a connection that is untracked (i.e.
-    // no longer being tracked by the kernel):
-    if (this->is_rebuilding && !connection.isTracked())
-        throw logic_error("Found a NOTRACK connection when rebuilding the connection table.");
-
-    // TODO: The above exception might occur if an event from attach() happens
-    // during a rebuild(). Refactor nfct_callback() into two separate callbacks
-    // each of which calls a different version of this updateConnection()
-    // method to avoid the issue.
-
-    pair<ConnectionSet::iterator, bool> result = this->connections.insert(connection);
-
-    // If the connection was not already in the table, there's nothing else to
-    // do. However, if the connection is not tracked then we actually want to
-    // undo the insertion above (netfilter_conntrack is likely telling us about
-    // a NOTRACK connection, which is safe to ignore), so we don't return just
-    // yet.
-    if (result.second && connection.isTracked())
-        return;
-
-    // Erase the existing entry for this connection in the table:
-    ConnectionSet::iterator hint = result.first;
-    hint++;
-    this->connections.erase(result.first);
-
-    // If we are being notified that the current connection is no longer being
-    // tracked by the kernel, there's no need to re-add it to the table so
-    // we're done:
-    if (!connection.isTracked())
-        return;
-
-    // Re-insert the up-to-date connection:
-    this->connections.insert(hint, connection);
-}
-
-int ConnectionTable::nfct_callback(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data)
-{
-    auto table = static_cast<ConnectionTable*>(data);
-
     if (!Connection::isConnTrackSupported(ct))
         return NFCT_CB_CONTINUE;
 
-    if (table->log_events)
-    {
-        char buf[1024];
-        nfct_snprintf(buf, sizeof(buf), ct, NFCT_T_ALL, NFCT_O_DEFAULT, NFCT_OF_TIME | NFCT_OF_TIMESTAMP | NFCT_OF_SHOW_LAYER3);
-        printf("%s\n", buf);
-    }
-
     auto connection = new Connection(ct);
-    table->updateConnection(*connection);
+    auto table = static_cast<ConnectionTable*>(data);
+    table->updateConnection(type, *connection);
 
     return NFCT_CB_CONTINUE;
+}
+
+int ConnectionTable::nfct_callback_rebuild(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data)
+{
+    if (!Connection::isConnTrackSupported(ct))
+        return NFCT_CB_CONTINUE;
+
+    if (type == NFCT_T_UPDATE)
+        type = NFCT_T_NEW;
+
+    auto connection = new Connection(ct);
+    auto table = static_cast<ConnectionTable*>(data);
+    table->updateConnection(type, *connection);
+
+    return NFCT_CB_CONTINUE;
+}
+
+void ConnectionTable::updateConnection(enum nf_conntrack_msg_type type, Connection& connection)
+{
+    if (this->log_events)
+        cout << connection.toNetFilterString() << endl;
+
+    pair<ConnectionSet::iterator, bool> result;
+    switch (type)
+    {
+        case NFCT_T_NEW:
+
+            if (this->debugging)
+                cout << "[DEBUG] ADD: " << connection.toString() << endl;
+
+            // Fall through...
+
+        case NFCT_T_UPDATE:
+
+            result = this->connections.insert(connection);
+
+            if (type == NFCT_T_UPDATE)
+            {
+                if (this->debugging)
+                    cout << "[DEBUG] UPDATE: " << connection.toString() << endl;
+
+                ConnectionSet::iterator hint = result.first;
+                hint++;
+                this->connections.erase(result.first);
+                this->connections.insert(hint, connection);
+            }
+            break;
+
+        case NFCT_T_DESTROY:
+
+            if (this->debugging)
+                cout << "[DEBUG] REMOVE: " << connection.toString() << endl;
+
+            this->connections.erase(connection);
+            break;
+
+        default:
+            break;
+    }
 }
 
 } // namespace conntrackex
