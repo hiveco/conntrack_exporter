@@ -1,6 +1,6 @@
 #pragma once
 
-#include <set>
+#include <list>
 
 #include "connection.h"
 
@@ -9,7 +9,7 @@ namespace conntrackex {
 
 using namespace std;
 
-typedef set<Connection> ConnectionSet;
+typedef list<Connection> ConnectionList;
 
 class ConnectionTable
 {
@@ -20,25 +20,30 @@ public:
 
     void enableLogging(bool enable = true) { this->log_events = enable; }
     void enableDebugging(bool enable = true) { this->debugging = enable; }
+    void setLoggingFormat(string format) { this->log_events_format = format; }
 
     void attach();
     void update();
 
-    ConnectionSet& getConnections() { return this->connections; }
+    ConnectionList& getConnections() { return this->connections; }
 
 private:
 
-    static int nfct_callback_attach(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data);
-    static int nfct_callback_rebuild(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data);
-
+    nfct_handle* makeConntrackHandle();
     void rebuild();
     void updateConnection(enum nf_conntrack_msg_type type, Connection& connection);
 
-    nfct_handle* handle;
+    static int nfct_callback_attach(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data);
+    static int nfct_callback_rebuild(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data);
+    static int nfct_callback_dummy(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data) { return NFCT_CB_STOP; }
+
+    nfct_handle* attach_handle;
+    nfct_handle* rebuild_handle;
     bool is_rebuilding;
     bool log_events = false;
+    string log_events_format = "netfilter";
     bool debugging = false;
-    ConnectionSet connections;
+    ConnectionList connections;
 };
 
 } // namespace conntrackex
