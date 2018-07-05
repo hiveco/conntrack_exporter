@@ -92,6 +92,13 @@ void ConnectionTable::rebuild()
         cout << "[DEBUG] Finished rebuilding connection table" << endl;
 }
 
+bool ConnectionTable::isIgnoredHost(const string& host) const
+{
+    return (find(this->ignored_hosts.begin(),
+                 this->ignored_hosts.end(),
+                 host) != this->ignored_hosts.end());
+}
+
 int ConnectionTable::nfct_callback_attach(enum nf_conntrack_msg_type type, struct nf_conntrack* ct, void* data)
 {
     Connection connection(ct);
@@ -116,6 +123,16 @@ int ConnectionTable::nfct_callback_rebuild(enum nf_conntrack_msg_type type, stru
 void ConnectionTable::updateConnection(enum nf_conntrack_msg_type type, Connection& connection)
 {
     connection.setEventType(type);
+
+    if (this->isIgnoredHost(connection.getRemoteHost()))
+    {
+        if (this->debugging)
+        {
+            cout << "[DEBUG] Remote host is present on the ignore list, ignoring connection:" << endl;
+            cout << "\t" << connection.toNetFilterString() << endl;
+        }
+        return;
+    }
 
     // Log the event:
     if (this->log_events && !this->is_rebuilding)

@@ -197,7 +197,7 @@ void Connection::loadLocalIPAddresses(bool log_debug_messages)
             Connection::local_ip_addresses.push_back(ip_address_str);
 
             if (log_debug_messages)
-                cout << "[DEBUG] Found local IP: " << ip_address_str << endl;
+                cout << "[DEBUG] Found local IP: '" << ip_address_str << "'" << endl;
         }
 
         current_ifap = current_ifap->ifa_next;
