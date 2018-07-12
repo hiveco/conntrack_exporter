@@ -2,6 +2,8 @@
 
 *Prometheus exporter for network connections*
 
+![Grafana screenshot](grafana.png)
+
 ## Uses
 
 * **Operations**: monitor when a critical link between your microservices is broken.
@@ -34,6 +36,8 @@ conntrack_closing_connections{host="10.0.1.12:8080"} 1
 conntrack_closed_connections{host="10.0.1.5:3306"} 3
 conntrack_closed_connections{host="10.0.1.12:8080"} 0
 ```
+
+Optionally, it can also emit logs of connection events in the familiar [conntrack tools](http://conntrack-tools.netfilter.org/) format or as JSON. Ship these logs to your favourite log processors and alerting systems or archive them for future audit capabilities.
 
 
 ## Quick Start
