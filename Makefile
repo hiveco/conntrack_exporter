@@ -23,7 +23,9 @@ run_docker: build_docker
 		hiveco/conntrack_exporter:$(CONNTRACK_EXPORTER_VERSION)
 
 publish_docker: build_docker
+	docker tag hiveco/conntrack_exporter:$(CONNTRACK_EXPORTER_VERSION) hiveco/conntrack_exporter:latest
 	docker push hiveco/conntrack_exporter:$(CONNTRACK_EXPORTER_VERSION)
+	docker push hiveco/conntrack_exporter:latest
 
 clean:
 	bazel clean
