@@ -9,6 +9,7 @@
 * **Operations**: monitor when a critical link between your microservices is broken.
 * **Security**: monitor which remote hosts your server is talking to.
 * **Debugging**: correlate intermittently misbehaving code with strange connection patterns.
+* **Audit**: store JSON logs of connection events for future analysis.
 
 
 ## Features
