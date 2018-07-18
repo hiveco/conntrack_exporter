@@ -1,6 +1,6 @@
 # **conntrack_exporter**
 
-*Prometheus exporter for network connections*
+*Prometheus exporter for tracking network connections*
 
 ![Grafana screenshot](grafana.png)
 
@@ -38,7 +38,7 @@ conntrack_closed_connections{host="10.0.1.5:3306"} 3
 conntrack_closed_connections{host="10.0.1.12:8080"} 0
 ```
 
-Optionally, it can also emit logs of connection events in the familiar [conntrack tools](http://conntrack-tools.netfilter.org/) format or as JSON. Ship these logs to your favourite log processors and alerting systems or archive them for future audit capabilities.
+Optionally, it can also emit logs of connection events. Ship these logs to your favourite log processors and alerting systems or archive them for future audit capabilities.
 
 
 ## Quick Start
@@ -47,7 +47,7 @@ Optionally, it can also emit logs of connection events in the familiar [conntrac
 docker run -d --cap-add=NET_ADMIN --net=host --name=conntrack_exporter hiveco/conntrack_exporter
 ```
 
-Then open http://localhost:9318/metrics in your browser.
+Then open http://localhost:9318/metrics in your browser to view the Prometheus metrics.
 
 To change the listen port:
 
@@ -57,6 +57,20 @@ docker run -d --cap-add=NET_ADMIN --net=host --name=conntrack_exporter hiveco/co
 
 Run with `--help` to see all available options.
 
+## Logging
+
+conntrack_exporter can emit logs of all connection events it processes. Example:
+
+```
+$ docker run -it --rm --cap-add=NET_ADMIN --net=host hiveco/conntrack_exporter --log-events --log-events-format=json
+...
+{"event_type":"new","original_source_host":"10.0.1.65:40806","original_destination_host":"151.101.2.49:443","reply_source_host":"151.101.2.49:443","reply_destination_host":"10.0.1.65:40806","remote_host":"151.101.2.49:443","state":"Open"}
+{"event_type":"new","original_source_host":"10.0.1.65:34900","original_destination_host":"162.247.242.20:443","reply_source_host":"162.247.242.20:443","reply_destination_host":"10.0.1.65:34900","remote_host":"162.247.242.20:443","state":"Opening"}
+```
+
+In the typical case, the `remote_host` and `state` keys would be the most interesting. `event_type` and the keys prefixed `original_` and `reply_` expose slightly lower level information obtained from libnetfilter_conntrack.
+
+The `--log-events-format` argument currently supports two logging formats: `json` or `netfilter` (default) for the familiar and human-friendly [conntrack tools](http://conntrack-tools.netfilter.org/) format.
 
 ## Building
 
@@ -124,7 +138,7 @@ echo "net.netfilter.nf_conntrack_tcp_timeout_close=60" >> /etc/sysctl.conf
 sysctl -p
 ```
 
-**WARNING:** Raising this setting too high is not recommended, especially on high-traffic servers, because it'll overflow your system's connection table due to all the extra closed connections it has to keep track of.
+**WARNING:** Raising this setting too high is not recommended, especially on high-traffic servers, because it may overflow your system's connection table due to all the extra closed connections it has to keep track of.
 
 Similar issues with other connection states (besides `closed`) might be resolved by updating the other `net.netfilter.nf_conntrack_tcp_timeout_*` settings as appropriate. Run `sysctl -a | grep conntrack | grep timeout` to see all available settings.
 

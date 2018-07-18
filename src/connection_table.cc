@@ -47,9 +47,9 @@ nfct_handle* ConnectionTable::makeConntrackHandle()
     nfct_filter_add_attr_u32(filter, NFCT_FILTER_L4PROTO, IPPROTO_TCP);
 
     if (nfct_filter_attach(nfct_fd(handle), filter) < 0)
-		throw runtime_error("Unable to attach netfilter_conntrack filter to handle!");
+        throw runtime_error("Unable to attach netfilter_conntrack filter to handle!");
 
-	nfct_filter_destroy(filter);
+    nfct_filter_destroy(filter);
 
     return handle;
 }
