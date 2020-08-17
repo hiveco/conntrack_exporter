@@ -1,16 +1,17 @@
 #include <string>
 #include <thread>
 #include <signal.h>
+#include <iostream>
 
 #include <argagg/argagg.hpp>
 
 #include <prometheus/exposer.h>
 #include <prometheus/registry.h>
+#include <prometheus/gauge.h>
 
 #include "connection_table.h"
 
 using namespace std;
-using namespace prometheus;
 using namespace conntrackex;
 
 
@@ -50,6 +51,7 @@ void tokenize(const std::string& str,
 int main(int argc, char** argv)
 {
     signal(SIGINT, sigint_handler);
+    using namespace prometheus;
 
     // Parse arguments:
     argagg::parser argument_parser {{
@@ -130,7 +132,7 @@ int main(int argc, char** argv)
         while (keep_running) {
 
             // Build up a registry and metric families:
-            auto registry = make_shared<Registry>();
+            auto registry = std::make_shared<Registry>();
             auto& opening_connections_family = BuildGauge()
                 .Name("conntrack_opening_connections")
                 .Help("How many connections to the remote host are currently opening?")
@@ -155,25 +157,25 @@ int main(int argc, char** argv)
                 if (!connection.hasState())
                     continue;
 
-                Gauge* pGuage;
+                Gauge* pGauge;
                 switch (connection.getState())
                 {
                     case ConnectionState::OPENING:
-                        pGuage = &opening_connections_family.Add({{"host", connection.getRemoteHost()}});
+                        pGauge = &opening_connections_family.Add({{"host", connection.getRemoteHost()}});
                         break;
                     case ConnectionState::OPEN:
-                        pGuage = &open_connections_family.Add({{"host", connection.getRemoteHost()}});
+                        pGauge = &open_connections_family.Add({{"host", connection.getRemoteHost()}});
                         break;
                     case ConnectionState::CLOSING:
-                        pGuage = &closing_connections_family.Add({{"host", connection.getRemoteHost()}});
+                        pGauge = &closing_connections_family.Add({{"host", connection.getRemoteHost()}});
                         break;
                     case ConnectionState::CLOSED:
-                        pGuage = &closed_connections_family.Add({{"host", connection.getRemoteHost()}});
+                        pGauge = &closed_connections_family.Add({{"host", connection.getRemoteHost()}});
                         break;
                     default:
                         continue;
                 }
-                pGuage->Increment();
+                pGauge->Increment();
             }
             exposer.RegisterCollectable(registry);
 

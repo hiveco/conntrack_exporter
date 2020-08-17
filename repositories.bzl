@@ -1,3 +1,5 @@
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+
 def libnetfilter_conntrack_repositories():
 
     BUILD = """
@@ -27,7 +29,7 @@ cc_library(
 )
 """
 
-    native.new_git_repository(
+    new_git_repository(
         name = "argagg",
         remote = "https://github.com/vietjtnguyen/argagg.git",
         commit = "4c8c86180cfafb1448f583ed0973da8c2f559dd6",
