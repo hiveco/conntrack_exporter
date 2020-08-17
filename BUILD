@@ -2,7 +2,7 @@ cc_binary(
     name = "conntrack_exporter",
     srcs = glob(["src/*.cc", "src/*h"]),
     deps = [
-        "@prometheus_cpp//:prometheus_cpp",
+        "@com_github_jupp0r_prometheus_cpp//pull",
         "@libnetfilter_conntrack//:libnetfilter_conntrack",
         "@argagg//:argagg",
     ],
