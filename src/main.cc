@@ -58,6 +58,7 @@ int main(int argc, char** argv)
 
         { "bind_address", {"-b", "--bind-address"}, "The IP address on which to bind the metrics HTTP endpoint (default: 0.0.0.0)", 1 },
         { "listen_port", {"-l", "--listen-port"}, "The port on which to expose the metrics HTTP endpoint (default: 9318)", 1 },
+        { "listen_path", {"-p", "--listen-path"}, "The path on which to expose the metrics HTTP endpoint (default: /metrics)", 1 },
         { "ignore_hosts", {"-i", "--ignore-hosts"}, "Comma-separated list of hosts to ignore", 1 },
         { "log_events", {"-e", "--log-events"}, "Enables logging of connection events", 0 },
         { "log_events_format", {"-f", "--log-events-format"}, "Connection events log format (netfilter [default] or json)", 1 },
@@ -98,13 +99,16 @@ int main(int argc, char** argv)
     const string listen_port = args["listen_port"] ?
         args["listen_port"].as<std::string>() :
         "9318"; // see https://github.com/prometheus/prometheus/wiki/Default-port-allocations
+    const string listen_path = args["listen_path"] ?
+	args["listen_path"].as<std::string>() :
+	"/metrics"; 
 
     try
     {
         cout << "conntrack_exporter v0.3" << endl;
 
         Exposer exposer{bind_address + ":" + listen_port};
-        cout << "Serving metrics at http://" + guessed_local_endpoint + ":" << listen_port << "/metrics ..." << endl;
+        cout << "Serving metrics at http://" + guessed_local_endpoint + ":" << listen_port << listen_path + " ..." << endl;
 
         ConnectionTable table;
         if (args["log_events"])
@@ -177,7 +181,7 @@ int main(int argc, char** argv)
                 }
                 pGauge->Increment();
             }
-            exposer.RegisterCollectable(registry);
+            exposer.RegisterCollectable(registry, &listen_path);
 
             this_thread::sleep_for(chrono::seconds(1));
         }
