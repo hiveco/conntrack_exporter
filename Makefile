@@ -1,4 +1,4 @@
-CONNTRACK_EXPORTER_VERSION = 0.3
+CONNTRACK_EXPORTER_VERSION = 0.3.1
 
 build:
 	bazel build -c dbg //:conntrack_exporter
@@ -12,8 +12,8 @@ build_stripped:
 run:
 	./conntrack_exporter
 
-build_docker: build_stripped
-	docker build -t hiveco/conntrack_exporter:$(CONNTRACK_EXPORTER_VERSION) .
+build_docker:
+	docker build -t hiveco/conntrack_exporter:$(CONNTRACK_EXPORTER_VERSION) --target release .
 
 run_docker: build_docker
 	docker run -it --rm \
@@ -31,4 +31,4 @@ clean:
 	bazel clean
 	rm -f conntrack_exporter
 
-.PHONY: build run build_docker run_docker publish_docker clean
+.PHONY: build build_stripped run build_docker run_docker publish_docker clean

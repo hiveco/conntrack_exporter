@@ -105,7 +105,7 @@ int main(int argc, char** argv)
 
     try
     {
-        cout << "conntrack_exporter v0.3" << endl;
+        cout << "conntrack_exporter v0.3.1" << endl;
 
         Exposer exposer{bind_address + ":" + listen_port};
         cout << "Serving metrics at http://" + guessed_local_endpoint + ":" << listen_port << listen_path + " ..." << endl;

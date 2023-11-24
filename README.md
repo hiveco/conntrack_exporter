@@ -76,12 +76,12 @@ The `--log-events-format` argument currently supports two logging formats: `json
 
 Prerequisites:
 
-* [Bazel](https://www.bazel.build/) (tested with v0.7.0)
+* [Bazel](https://www.bazel.build/) (tested with v6.4.0)
 * libnetfilter-conntrack-dev (Ubuntu/Debian: `apt-get install libnetfilter-conntrack-dev`)
 
 conntrack_exporter builds as a mostly-static binary, only requiring that the `libnetfilter_conntrack` library is available on the system. To build the binary, run `make`. To build the `hiveco/conntrack_exporter` Docker image, run `make build_docker`.
 
-NOTE: Building has only been tested on Ubuntu 16.04.
+NOTE: Building is only tested on Ubuntu 22.04.
 
 
 ## Connection States
