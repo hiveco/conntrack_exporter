@@ -181,7 +181,7 @@ int main(int argc, char** argv)
                 }
                 pGauge->Increment();
             }
-            exposer.RegisterCollectable(registry, &listen_path);
+            exposer.RegisterCollectable(registry, listen_path);
 
             this_thread::sleep_for(chrono::seconds(1));
         }
